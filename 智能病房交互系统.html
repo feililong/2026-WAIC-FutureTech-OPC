@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能病房交互系统 | 模拟用户操作</title>
+    <style>
+        /* 全局变量：粉绿蓝医疗配色，参考医院业务.html */
+        :root {
+            /* 主色系 */
+            --primary-blue: #165DFF; /* 医疗蓝主色 */
+            --primary-blue-light: #E8F3FF;
+            --success-green: #10B981; /* 成功绿，对应医院业务的审核通过✅ */
+            --success-green-light: #ECFDF5;
+            --soft-pink: #FFE4E6; /* 柔和粉，患者端用色 */
+            --soft-pink-light: #FFF1F2;
+            /* 中性色 */
+            --bg-white: #FFFFFF;
+            --bg-gray: #F8FAFC;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --border-color: #E2E8F0;
+            /* 阴影 */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(22,93,255,0.12);
+            /* 动画 */
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* 顶部状态栏：参考医院业务.html的顶部数据栏 */
+        .top-status-bar {
+            background: var(--bg-white);
+            padding: 12px 24px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .ward-info {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--primary-blue);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .status-item b {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .current-time {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .alert-badge {
+            background: rgba(245,63,63,0.1);
+            color: #F53F3F;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert-badge.show {
+            display: inline-block;
+        }
+
+        /* 角色切换栏 */
+        .role-switch {
+            background: var(--bg-white);
+            margin: 16px 24px;
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            gap: 8px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .role-btn.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .role-btn.patient.active {
+            background: #EC4899; /* 患者端用粉 */
+        }
+
+        .role-btn.nurse.active {
+            background: var(--success-green); /* 护士端用绿 */
+        }
+
+        .role-btn.doctor.active {
+            background: var(--primary-blue); /* 医生端用蓝 */
+        }
+
+        /* 主内容区 */
+        .main-content {
+            padding: 0 24px 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 功能卡片网格：参考医院业务的卡片布局 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .func-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+        }
+
+        .func-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .patient-theme .card-icon {
+            background: var(--soft-pink);
+        }
+
+        .nurse-theme .card-icon {
+            background: var(--success-green-light);
+        }
+
+        .doctor-theme .card-icon {
+            background: var(--primary-blue-light);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .card-status {
+            margin-left: auto;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .status-success {
+            background: var(--success-green-light);
+            color: var(--success-green);
+        }
+
+        .status-warning {
+            background: #FFF7E6;
+            color: #FF7D00;
+        }
+
+        .status-info {
+            background: var(--primary-blue-light);
+            color: var(--primary-blue);
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .card-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0E42D2;
+        }
+
+        .btn-success {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0A9E6A;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        /* 下拉菜单 */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--bg-white);
+            min-width: 200px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            z-index: 10;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .dropdown-content.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-gray);
+            color: var(--primary-blue);
+        }
+
+        /* 任务列表 */
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .task-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .task-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .task-done {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            margin-bottom: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .form-textarea {
+            height: 100px;
+            resize: none;
+        }
+
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-md);
+            z-index: 2000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast-success {
+            background: var(--success-green);
+        }
+
+        .toast-info {
+            background: var(--primary-blue);
+        }
+
+        .toast-warning {
+            background: #FF7D00;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .top-status-bar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .status-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部状态栏：参考医院业务.html的顶部数据展示 -->
+    <div class="top-status-bar">
+        <div class="status-left">
+            <div class="ward-info">🏥 3号病房 | 住院部3楼</div>
+            <div class="status-item">床位使用率：<b id="bedUsage">85%</b></div>
+            <div class="status-item">待处理任务：<b id="pendingTaskCount">5</b></div>
+            <div class="status-item">在线医护：<b>6</b>人</div>
+        </div>
+        <div class="status-right">
+            <div class="current-time" id="currentTime">2026-04-30 14:28</div>
+            <div class="alert-badge" id="alertBadge">⚠️ 有新的异常提醒</div>
+        </div>
+    </div>
+
+    <!-- 角色切换栏：模拟不同用户登录 -->
+    <div class="role-switch">
+        <button class="role-btn patient active" onclick="switchRole('patient')">🙋 患者视角</button>
+        <button class="role-btn nurse" onclick="switchRole('nurse')">👩⚕️ 护士视角</button>
+        <button class="role-btn doctor" onclick="switchRole('doctor')">👨⚕️ 医生视角</button>
+    </div>
+
+    <!-- 主内容区：根据角色显示不同功能 -->
+    <div class="main-content">
+        <!-- 患者端功能 -->
+        <div id="patient-content">
+            <div class="section-title">🙋 患者服务</div>
+            <div class="card-grid patient-theme">
+                <!-- 呼叫护士 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">📞</div>
+                        <div class="card-title">一键呼叫护士</div>
+                        <span class="card-status status-info" id="callStatus">未呼叫</span>
+                    </div>
+                    <div class="card-desc">点击即可呼叫值班护士，无需按呼叫铃</div>
+                    <button class="card-action btn-primary" onclick="callNurse()">呼叫护士</button>
+                </div>
+
+                <!-- 用药提醒 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">💊</div>
+                        <div class="card-title">用药提醒</div>
+                        <span class="card-status status-success">今日已服1次</span>
+                    </div>
+                    <div class="card-desc">下次用药：<b>14:00 阿莫西林胶囊 0.5g</b></div>
+                    <div class="dropdown">
+                        <button class="card-action btn-outline" onclick="toggleDropdown('medDropdown')">查看用药详情 ▾</button>
+                        <div class="dropdown-content" id="medDropdown">
+                            <div class="dropdown-item">✅ 08:00 已服用 阿莫西林0.5g</div>
+                            <div class="dropdown-item">⏰ 14:00 待服用 阿莫西林0.5g</div>
+                            <div class="dropdown-item">⏰ 20:00 待服用 阿莫西林0.5g</div>
+                            <div class="dropdown-item">📋 用药注意事项：饭后服用，避免过敏</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 不适反馈 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">🤒</div>
+                        <div class="card-title">不适反馈</div>
+                        <span class="card-status status-success" id="feedbackStatus">无未处理反馈</span>
+                    </div>
+                    <div class="card-desc">有任何不适可随时反馈给医护人员</div>
+                    <button class="card-action btn-outline" onclick="openModal('feedbackModal')">提交不适反馈</button>
+                </div>
+
+                <!-- 康复指导 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">📚</div>
+                        <div class="card-title">康复指导</div>
+                        <span class="card-status status-info">个性化定制</span>
+                    </div>
+                    <div class="card-desc">根据您的病情生成的专属康复方案</div>
+                    <div class="dropdown">
+                        <button class="card-action btn-outline" onclick="toggleDropdown('rehabDropdown')">查看指导内容 ▾</button>
+                        <div class="dropdown-content" id="rehabDropdown">
+                            <div class="dropdown-item" onclick="showToast('已为您打开术后下床动作示范图', 'info')">🏃 术后下床动作示范</div>
+                            <div class="dropdown-item" onclick="showToast('已为您打开饮食注意事项', 'info')">🥗 术后饮食注意事项</div>
+                            <div class="dropdown-item" onclick="showToast('已为您打开呼吸训练方法', 'info')">🫁 呼吸训练方法</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 环境控制 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">💡</div>
+                        <div class="card-title">病房环境控制</div>
+                        <span class="card-status status-success">运行正常</span>
+                    </div>
+                    <div class="card-desc">当前温度：24℃ | 灯光亮度：60%</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="card-action btn-outline" onclick="controlEnv('light')">调节灯光</button>
+                        <button class="card-action btn-outline" onclick="controlEnv('temp')">调节温度</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 护士端功能 -->
+        <div id="nurse-content" style="display: none;">
+            <div class="section-title">👩⚕️ 护士工作台</div>
+            <div class="card-grid nurse-theme">
+                <!-- 待处理任务 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">📝</div>
+                        <div class="card-title">待处理护理任务</div>
+                        <span class="card-status status-warning" id="nurseTaskCount">3项待完成</span>
+                    </div>
+                    <div class="card-desc">根据患者护理计划自动生成的待办任务</div>
+                    <ul class="task-list" id="nurseTaskList">
+                        <li class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">为3床患者翻身</span>
+                                <span class="task-time">应完成时间：14:00 | 已超时10分钟</span>
+                            </div>
+                            <button class="card-action btn-success" onclick="completeTask(this, '为3床患者翻身')">标记完成</button>
+                        </li>
+                        <li class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">测量5床患者体温</span>
+                                <span class="task-time">应完成时间：15:00</span>
+                            </div>
+                            <button class="card-action btn-success" onclick="completeTask(this, '测量5床患者体温')">标记完成</button>
+                        </li>
+                        <li class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">7床患者口腔护理</span>
+                                <span class="task-time">应完成时间：16:00</span>
+                            </div>
+                            <button class="card-action btn-success" onclick="completeTask(this, '7床患者口腔护理')">标记完成</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 呼叫/反馈处理 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">🔔</div>
+                        <div class="card-title">患者呼叫/反馈</div>
+                        <span class="card-status status-warning" id="nurseCallCount">2条未处理</span>
+                    </div>
+                    <div class="card-desc">患者发起的呼叫和不适反馈请求</div>
+                    <ul class="task-list" id="nurseCallList">
+                        <li class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">3床患者呼叫护士</span>
+                                <span class="task-time">呼叫时间：14:25</span>
+                            </div>
+                            <button class="card-action btn-primary" onclick="handleCall(this, '3床患者呼叫护士')">处理</button>
+                        </li>
+                        <li class="task-item">
+                            <div class="task-info">
+                                <span class="task-name">5床患者反馈头晕</span>
+                                <span class="task-time">反馈时间：14:20</span>
+                            </div>
+                            <button class="card-action btn-primary" onclick="handleCall(this, '5床患者反馈头晕')">处理</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 护理文书录入 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">📋</div>
+                        <div class="card-title">护理文书录入</div>
+                        <span class="card-status status-success">今日已录12份</span>
+                    </div>
+                    <div class="card-desc">快速录入患者生命体征、护理记录</div>
+                    <button class="card-action btn-primary" onclick="openModal('recordModal')">新建录入</button>
+                </div>
+
+                <!-- 患者状态总览 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">患者状态总览</div>
+                        <span class="card-status status-success">全部正常</span>
+                    </div>
+                    <div class="card-desc">当前病房8位患者生命体征均正常</div>
+                    <button class="card-action btn-outline" onclick="showToast('已生成今日患者状态报表', 'success')">导出报表</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 医生端功能 -->
+        <div id="doctor-content" style="display: none;">
+            <div class="section-title">👨⚕️ 医生工作台</div>
+            <div class="card-grid doctor-theme">
+                <!-- 患者报告查看 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">📄</div>
+                        <div class="card-title">患者多模态报告</div>
+                        <span class="card-status status-info">8份报告已生成</span>
+                    </div>
+                    <div class="card-desc">AI自动生成的患者护理报告、生命体征趋势图</div>
+                    <div class="dropdown">
+                        <button class="card-action btn-outline" onclick="toggleDropdown('reportDropdown')">选择患者查看报告 ▾</button>
+                        <div class="dropdown-content" id="reportDropdown">
+                            <div class="dropdown-item" onclick="showToast('已打开3床患者的护理报告', 'info')">3床 张明 术后第一天</div>
+                            <div class="dropdown-item" onclick="showToast('已打开5床患者的护理报告', 'info')">5床 李华 术前观察</div>
+                            <div class="dropdown-item" onclick="showToast('已打开7床患者的护理报告', 'info')">7床 王芳 康复期</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 医嘱开具 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">🩺</div>
+                        <div class="card-title">医嘱开具</div>
+                        <span class="card-status status-success">今日已开3份</span>
+                    </div>
+                    <div class="card-desc">开具药品、检查、护理等医嘱，自动同步至护士端</div>
+                    <button class="card-action btn-primary" onclick="openModal('orderModal')">新建医嘱</button>
+                </div>
+
+                <!-- 会诊申请 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">👨⚕️</div>
+                        <div class="card-title">远程会诊申请</div>
+                        <span class="card-status status-info">支持多学科MDT</span>
+                    </div>
+                    <div class="card-desc">联合上级医院专家开展远程会诊，病历资料一键共享</div>
+                    <button class="card-action btn-outline" onclick="openModal('consultModal')">申请会诊</button>
+                </div>
+
+                <!-- 影像分析查看 -->
+                <div class="func-card">
+                    <div class="card-header">
+                        <div class="card-icon">🔍</div>
+                        <div class="card-title">AI影像分析结果</div>
+                        <span class="card-status status-success">今日已分析3份</span>
+                    </div>
+                    <div class="card-desc">AI辅助诊断肺结节、骨折、心电等影像结果</div>
+                    <button class="card-action btn-outline" onclick="showToast('已打开最新影像分析报告', 'info')">查看最新报告</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：呼叫确认 -->
+    <div class="modal-overlay" id="callModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">确认呼叫护士</div>
+                <button class="modal-close" onclick="closeModal('callModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p>呼叫后值班护士将立即收到提醒，是否确认呼叫？</p>
+            </div>
+            <div class="modal-footer">
+                <button class="card-action btn-outline" onclick="closeModal('callModal')">取消</button>
+                <button class="card-action btn-primary" onclick="confirmCall()">确认呼叫</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：不适反馈 -->
+    <div class="modal-overlay" id="feedbackModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">提交不适反馈</div>
+                <button class="modal-close" onclick="closeModal('feedbackModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">不适类型</label>
+                    <select class="form-select" id="feedbackType">
+                        <option value="疼痛">疼痛</option>
+                        <option value="头晕">头晕</option>
+                        <option value="恶心">恶心</option>
+                        <option value="胸闷">胸闷</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">详细描述</label>
+                    <textarea class="form-textarea" placeholder="请描述您的不适感受..." id="feedbackDesc"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="card-action btn-outline" onclick="closeModal('feedbackModal')">取消</button>
+                <button class="card-action btn-primary" onclick="submitFeedback()">提交反馈</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：护理文书录入 -->
+    <div class="modal-overlay" id="recordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">护理文书录入</div>
+                <button class="modal-close" onclick="closeModal('recordModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">患者床号</label>
+                    <select class="form-select">
+                        <option>3床 张明</option>
+                        <option>5床 李华</option>
+                        <option>7床 王芳</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">体温（℃）</label>
+                        <input type="number" class="form-input" placeholder="36.5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">脉搏（次/分）</label>
+                        <input type="number" class="form-input" placeholder="72">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">呼吸（次/分）</label>
+                        <input type="number" class="form-input" placeholder="18">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">血压（mmHg）</label>
+                        <input type="text" class="form-input" placeholder="120/80">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">备注</label>
+                    <textarea class="form-textarea" placeholder="请输入护理记录备注..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="card-action btn-outline" onclick="closeModal('recordModal')">取消</button>
+                <button class="card-action btn-success" onclick="submitRecord()">保存录入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：医嘱开具 -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">新建医嘱</div>
+                <button class="modal-close" onclick="closeModal('orderModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">患者床号</label>
+                    <select class="form-select">
+                        <option>3床 张明</option>
+                        <option>5床 李华</option>
+                        <option>7床 王芳</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">药品名称</label>
+                    <input type="text" class="form-input" placeholder="请输入药品名称">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">剂量</label>
+                        <input type="text" class="form-input" placeholder="如0.5g">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">频次</label>
+                        <select class="form-select">
+                            <option>每日1次</option>
+                            <option>每日2次</option>
+                            <option>每日3次</option>
+                            <option>必要时</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">用法</label>
+                    <select class="form-select">
+                        <option>口服</option>
+                        <option>静脉注射</option>
+                        <option>外用</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="card-action btn-outline" onclick="closeModal('orderModal')">取消</button>
+                <button class="card-action btn-primary" onclick="submitOrder()">提交医嘱</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：会诊申请 -->
+    <div class="modal-overlay" id="consultModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">远程会诊申请</div>
+                <button class="modal-close" onclick="closeModal('consultModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">患者信息</label>
+                    <select class="form-select">
+                        <option>3床 张明 术后第一天</option>
+                        <option>5床 李华 术前观察</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">会诊科室</label>
+                    <select class="form-select">
+                        <option>心内科</option>
+                        <option>呼吸科</option>
+                        <option>骨科</option>
+                        <option>多学科MDT</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">会诊原因</label>
+                    <textarea class="form-textarea" placeholder="请描述会诊需求..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="card-action btn-outline" onclick="closeModal('consultModal')">取消</button>
+                <button class="card-action btn-primary" onclick="submitConsult()">提交申请</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 实时时间更新
+        function updateTime() {
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 角色切换
+        function switchRole(role) {
+            // 切换按钮状态
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.role-btn.${role}`).classList.add('active');
+
+            // 切换内容显示
+            document.getElementById('patient-content').style.display = role === 'patient' ? 'block' : 'none';
+            document.getElementById('nurse-content').style.display = role === 'nurse' ? 'block' : 'none';
+            document.getElementById('doctor-content').style.display = role === 'doctor' ? 'block' : 'none';
+
+            showToast(`已切换到${role === 'patient' ? '患者' : role === 'nurse' ? '护士' : '医生'}视角`, 'info');
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            // 关闭其他下拉菜单
+            document.querySelectorAll('.dropdown-content').forEach(d => {
+                if (d.id !== id) d.classList.remove('show');
+            });
+            dropdown.classList.toggle('show');
+        }
+
+        // 点击页面其他地方关闭下拉菜单
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+            }
+        });
+
+        // 模态框控制
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        // 点击遮罩关闭模态框
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+
+        // Toast提示
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast toast-${type} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 患者端功能
+        // 呼叫护士
+        function callNurse() {
+            openModal('callModal');
+        }
+
+        function confirmCall() {
+            closeModal('callModal');
+            document.getElementById('callStatus').textContent = '已呼叫，等待响应';
+            document.getElementById('callStatus').className = 'card-status status-warning';
+            showToast('呼叫成功！护士将尽快到达', 'success');
+            // 更新顶部待处理任务数
+            updatePendingCount(1);
+            // 显示顶部提醒
+            document.getElementById('alertBadge').classList.add('show');
+        }
+
+        // 环境控制
+        function controlEnv(type) {
+            if (type === 'light') {
+                showToast('灯光已调至适宜亮度', 'success');
+            } else {
+                showToast('温度已调至24℃', 'success');
+            }
+        }
+
+        // 提交不适反馈
+        function submitFeedback() {
+            const type = document.getElementById('feedbackType').value;
+            const desc = document.getElementById('feedbackDesc').value;
+            if (!desc) {
+                showToast('请填写不适描述', 'warning');
+                return;
+            }
+            closeModal('feedbackModal');
+            document.getElementById('feedbackStatus').textContent = '已提交，等待处理';
+            document.getElementById('feedbackStatus').className = 'card-status status-warning';
+            showToast('反馈提交成功！护士将尽快处理', 'success');
+            updatePendingCount(1);
+            document.getElementById('alertBadge').classList.add('show');
+        }
+
+        // 护士端功能
+        // 完成任务
+        function completeTask(btn, taskName) {
+            const taskItem = btn.parentElement;
+            taskItem.querySelector('.task-name').classList.add('task-done');
+            taskItem.querySelector('.task-time').textContent = '完成时间：' + document.getElementById('currentTime').textContent.split(' ')[1];
+            btn.textContent = '已完成';
+            btn.disabled = true;
+            btn.className = 'card-action btn-outline';
+            showToast(`「${taskName}」标记完成`, 'success');
+            updatePendingCount(-1);
+        }
+
+        // 处理呼叫/反馈
+        function handleCall(btn, callName) {
+            const callItem = btn.parentElement;
+            callItem.querySelector('.task-name').textContent += '（已处理）';
+            callItem.querySelector('.task-time').textContent = '处理时间：' + document.getElementById('currentTime').textContent.split(' ')[1];
+            btn.textContent = '已处理';
+            btn.disabled = true;
+            btn.className = 'card-action btn-outline';
+            showToast(`「${callName}」已处理`, 'success');
+            updatePendingCount(-1);
+            // 如果是呼叫，更新患者端状态
+            if (callName.includes('呼叫')) {
+                document.getElementById('callStatus').textContent = '护士已响应';
+                document.getElementById('callStatus').className = 'card-status status-success';
+                document.getElementById('alertBadge').classList.remove('show');
+            }
+        }
+
+        // 提交护理文书
+        function submitRecord() {
+            closeModal('recordModal');
+            showToast('护理文书录入成功！', 'success');
+        }
+
+        // 医生端功能
+        // 提交医嘱
+        function submitOrder() {
+            closeModal('orderModal');
+            showToast('医嘱已下发，护士端已收到提醒', 'success');
+            // 护士端待处理任务+1
+            updatePendingCount(1);
+            document.getElementById('alertBadge').classList.add('show');
+        }
+
+        // 提交会诊申请
+        function submitConsult() {
+            closeModal('consultModal');
+            showToast('会诊申请已提交，等待上级医院响应', 'success');
+        }
+
+        // 更新待处理任务数
+        function updatePendingCount(change) {
+            const countEl = document.getElementById('pendingTaskCount');
+            let count = parseInt(countEl.textContent);
+            count += change;
+            count = Math.max(0, count);
+            countEl.textContent = count;
+            // 同步更新护士端的任务数
+            const nurseCountEl = document.getElementById('nurseTaskCount');
+            let nurseCount = parseInt(nurseCountEl.textContent);
+            nurseCount += change;
+            nurseCount = Math.max(0, nurseCount);
+            nurseCountEl.textContent = nurseCount + '项待完成';
+        }
+    </script>
+</body>
+</html>
