@@ -1,0 +1,193 @@
+// 移动端菜单切换
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const navMenu = document.getElementById('navMenu');
+
+mobileMenuBtn.addEventListener('click', () => {
+    navMenu.classList.toggle('active');
+});
+
+// 导航高亮与平滑滚动
+const sections = document.querySelectorAll('section');
+const navLinks = document.querySelectorAll('.nav-link');
+const sideNavItems = document.querySelectorAll('.side-nav-item');
+
+window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (pageYOffset >= sectionTop - 100) {
+            current = section.getAttribute('id');
+        }
+    });
+
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href').includes(current)) {
+            link.classList.add('active');
+        }
+    });
+
+    sideNavItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('href').includes(current)) {
+            item.classList.add('active');
+        }
+    });
+});
+
+// 核心能力卡片展开/收起
+const abilityCards = document.querySelectorAll('.ability-card');
+abilityCards.forEach(card => {
+    card.addEventListener('click', () => {
+        card.classList.toggle('active');
+    });
+});
+
+// 功能模块展开/收起
+function toggleFunction(header) {
+    const item = header.parentElement;
+    item.classList.toggle('active');
+}
+
+// 演示区Tab切换
+const demoTabs = document.querySelectorAll('.demo-tab');
+const demoPanels = document.querySelectorAll('.demo-panel');
+
+demoTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        // 切换Tab状态
+        demoTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // 切换面板
+        const targetId = tab.getAttribute('data-tab');
+        demoPanels.forEach(panel => {
+            panel.classList.remove('active');
+            if (panel.id === targetId) {
+                panel.classList.add('active');
+            }
+        });
+    });
+});
+
+// VLM演示模拟
+function simulateVLM(type) {
+    const patientIcon = document.getElementById('patientIcon');
+    const heartRate = document.getElementById('heartRate');
+    const bloodOxygen = document.getElementById('bloodOxygen');
+    const result = document.getElementById('vlmResult');
+
+    // 重置状态
+    patientIcon.classList.remove('fall');
+    result.className = 'demo-result';
+    result.textContent = '正在分析摄像头画面...';
+
+    setTimeout(() => {
+        if (type === 'fall') {
+            patientIcon.classList.add('fall');
+            patientIcon.textContent = '🤸';
+            heartRate.textContent = '105';
+            bloodOxygen.textContent = '92';
+            result.textContent = '⚠️ 识别结果：患者跌倒，心率105次/分，血氧92%，请立即处理';
+            result.classList.add('alert');
+            // 模拟TTS播报
+            setTimeout(() => {
+                alert('TTS语音播报：患者有跌倒风险，请立即扶起');
+            }, 1000);
+        } else if (type === 'abnormal') {
+            patientIcon.textContent = '😟';
+            heartRate.textContent = '118';
+            bloodOxygen.textContent = '89';
+            result.textContent = '⚠️ 识别结果：生命体征异常，心率118次/分，血氧89%，请立即查看患者';
+            result.classList.add('alert');
+            setTimeout(() => {
+                alert('TTS语音播报：患者生命体征异常，请医生立即查看');
+            }, 1000);
+        } else {
+            patientIcon.textContent = '🧍';
+            heartRate.textContent = '72';
+            bloodOxygen.textContent = '98';
+            result.textContent = '✅ 识别结果：患者状态正常，心率72次/分，血氧98%';
+        }
+    }, 1500);
+}
+
+// ASR演示模拟
+function simulateASR() {
+    const voiceBtn = document.getElementById('voiceBtn');
+    const result = document.getElementById('asrResult');
+
+    voiceBtn.classList.add('recording');
+    voiceBtn.querySelector('.voice-text').textContent = '正在录音...';
+    result.innerHTML = '<p>正在识别语音...</p>';
+
+    // 模拟录音2秒后识别完成
+    setTimeout(() => {
+        voiceBtn.classList.remove('recording');
+        voiceBtn.querySelector('.voice-text').textContent = '点击开始录音';
+        
+        // 模拟识别结果
+        const mockResults = [
+            { text: '帮我叫护士', response: '已为您呼叫护士，请稍候' },
+            { text: '我的药什么时候吃', response: '您今天的用药时间是14:00，服用阿莫西林胶囊0.5g' },
+            { text: '现在几点了', response: '现在是14:30，距离您的用药时间还有30分钟' }
+        ];
+        const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
+
+        result.innerHTML = `
+            <p><b>识别结果：</b>${randomResult.text}</p>
+            <p style="margin-top:12px;color:var(--primary-color)"><b>系统回复：</b>${randomResult.response}</p>
+        `;
+
+        // 模拟TTS播报回复
+        setTimeout(() => {
+            alert(`TTS语音播报：${randomResult.response}`);
+        }, 500);
+    }, 2000);
+}
+
+// TTS演示模拟
+function simulateTTS() {
+    const input = document.getElementById('ttsInput');
+    const role = document.getElementById('ttsRole');
+    const player = document.getElementById('ttsPlayer');
+    const text = input.value.trim();
+
+    if (!text) {
+        alert('请输入要合成的文本');
+        return;
+    }
+
+    player.style.display = 'flex';
+    // 模拟播放3秒
+    setTimeout(() => {
+        player.style.display = 'none';
+        alert(`TTS语音播放完成（${role.value === 'patient' ? '患者提示音' : '医护警报音'}）：${text}`);
+    }, 3000);
+}
+
+// 文生图演示模拟
+function simulateAIGC() {
+    const input = document.getElementById('aigcInput');
+    const result = document.getElementById('aigcResult');
+    const text = input.value.trim();
+
+    if (!text) {
+        alert('请输入生成提示词');
+        return;
+    }
+
+    result.innerHTML = '<div class="generated-image"><div class="image-placeholder">正在生成图像，请稍候...</div></div>';
+
+    // 模拟生成2秒后显示结果
+    setTimeout(() => {
+        // 用占位图模拟生成效果，实际项目可对接文生图API
+        result.innerHTML = `
+            <div class="generated-image">
+                <img src="https://picsum.photos/600/400?random=${Math.random()}" alt="AI生成的医疗示意图">
+                <div style="position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,0.6);color:white;padding:4px 12px;border-radius:4px;font-size:12px;">AI生成示意图：${text}</div>
+            </div>
+        `;
+    }, 2000);
+}

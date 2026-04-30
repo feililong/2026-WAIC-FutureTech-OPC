@@ -1,0 +1,10 @@
+smart-ward-multimodal-system/
+├── README.md                 # 项目说明/竞赛指引/GitHub部署说明
+├── index.html                # 主交互Demo页面（含所有功能）
+├── /assets
+│   ├── /css
+│   │   └── style.css          # 医疗风格样式文件
+│   └── /js
+│   │   └── main.js            # 交互逻辑文件
+└── /docs
+    └── solution-detail.md     # 完整方案文档（备用评审材料）
